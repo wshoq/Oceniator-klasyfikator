@@ -141,9 +141,9 @@
             const header = sections[i];
             const body = sections[i + 1];
 
-            // Szukamy linka w body
-            const linkMatch = body.match(/<a href="(.*?)"/);
-            const link = linkMatch ? linkMatch[1] : "";
+            // Wyciągamy link w formacie: (https://cointelegraph.com/...) lub (https://coindesk.com/...)
+            const linkMatch = body.match(/\(https:\/\/(cointelegraph|coindesk)\.com[^\)]*\)/);
+            const link = linkMatch ? linkMatch[0].slice(1, -1) : "";
 
             finalHTML += `
               <div class="fragment">
