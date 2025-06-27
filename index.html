@@ -171,12 +171,12 @@
             form.action = "https://vps15151.awhost.cloud/webhook-test/oceniator";
             form.innerHTML = `
               <label>Oceń ten fragment:
-                <select name="ocena">
-                  <option value="5">⭐⭐⭐⭐⭐</option>
-                  <option value="4">⭐⭐⭐⭐</option>
-                  <option value="3">⭐⭐⭐</option>
-                  <option value="2">⭐⭐</option>
-                  <option value="1">⭐</option>
+                <select name="Kategoria">
+                  <option value="Rynki">Rynki</option>
+                  <option value="Prawo">Prawo</option>
+                  <option value="Technologie">Technologie</option>
+                  <option value="Adopcje">Adopcje</option>
+                  <option value="Pozostałe">Pozostałe</option>
                 </select>
                 <input type="hidden" name="nagłówek" value="${currentHeader.textContent.trim()}">
                 <input type="hidden" name="link" value="${lastLink}">
