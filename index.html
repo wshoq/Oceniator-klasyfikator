@@ -2,235 +2,91 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <title>streszCzarka z kategoriami</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artykuły z selektorem</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: auto;
-      padding: 2rem;
-      background: #f7f7f7;
+    .article {
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+      background: #f9f9f9;
     }
-    article {
-      background: white;
-      padding: 1rem;
-      margin-bottom: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
+
+    .selector {
+      margin-top: 12px;
     }
-    .content-wrapper {
-      flex: 1;
-    }
-    h1 {
-      text-align: center;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    select.category-select {
-      min-width: 140px;
-      padding: 0.4rem;
-      font-size: 1rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-    select.category-select:focus {
-      outline-color: #007bff;
-    }
-    a {
-      color: #007bff;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    .date-controls {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .date-controls button {
-      font-size: 1.5rem;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #6c757d;
-      color: white;
-      cursor: pointer;
-    }
-    .date-controls button:hover {
-      background-color: #5a6268;
-    }
-    input[type="date"] {
-      font-size: 1.2rem;
-      padding: 0.5rem;
-      width: 180px;
+
+    .selector select {
+      padding: 6px 10px;
+      font-size: 1em;
     }
   </style>
 </head>
 <body>
-  <h1>📰 Krypto Treści z kategoriami</h1>
 
-  <div class="date-controls">
-    <button id="prevDayBtn">←</button>
-    <input type="date" id="datePicker" />
-    <button id="nextDayBtn">→</button>
-  </div>
-
-  <div id="posts">Wybierz datę, aby zobaczyć artykuły.</div>
+  <div id="articles-container"></div>
 
   <script>
-    const SUPABASE_URL = "https://uybpjjqvtcpsxihpbhlp.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YnBqanF2dGNwc3hpaHBiaGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA0MzMxOTksImV4cCI6MjA2NjAwOTE5OX0.t2amEymFNyEr7bEZ4_p5qX5zxdpx60m3vlyyj2uZkdc";
+    // Lista artykułów – tytuł, treść, link
+    const articles = [
+      {
+        title: "Across Protocol i ACX Token",
+        content: `Token ACX z protokołu Across Protocol zmagał się z oskarżeniami o manipulację zarządzaniem i insider trading, co spowodowało spadek jego wartości o 10%. Oskarżenia sugerują, że główni współpracownicy mogli wyprzedzać listowanie na Binance i nadal kontrolować decentralizowaną DAO, choć zespół zaprzecza tym zarzutom. Co-founder Hart Lambur zaprzeczył oskarżeniom, twierdząc, że tokeny ACX są wykorzystywane zgodnie z przeznaczeniem do rozwoju i rozbudowy protokołu.`,
+        link: "https://www.coindesk.com/markets/2025/06/27/acx-token-slides-10-as-accusations-of-dao-manipulation-rock-across-protocol"
+      },
+      // Dodaj więcej tu
+    ];
 
-    // Tu wpisz swój webhook n8n (np. z n8n, który odbierze POST i zrobi update w Airtable)
-    const WEBHOOK_URL = 'https://vps15151.awhost.cloud/webhook-test/oceniator';
+    const webhookURL = "https://vps15151.awhost.cloud/webhook-test/oceniator"; // <- Zmień na swój webhook n8n
 
-    const datePicker = document.getElementById('datePicker');
-    const container = document.getElementById('posts');
-    const prevDayBtn = document.getElementById('prevDayBtn');
-    const nextDayBtn = document.getElementById('nextDayBtn');
+    const container = document.getElementById("articles-container");
 
-    function parseTitleDateToISO(titleDate) {
-      // Twój format daty: "27.06.2025, ..." -> "2025-06-27"
-      const [datePart] = titleDate.split(',');
-      const [day, month, year] = datePart.trim().split('.');
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
+    articles.forEach((article, index) => {
+      const div = document.createElement("div");
+      div.className = "article";
+      div.innerHTML = `
+        <h3>${article.title}</h3>
+        <p>${article.content}</p>
+        <p><a href="${article.link}" target="_blank">Link do źródła</a></p>
+        <div class="selector">
+          <label for="select-${index}">Oceń temat: </label>
+          <select id="select-${index}">
+            <option value="">-- Wybierz kategorię --</option>
+            <option value="Rynki">Rynki</option>
+            <option value="Technologie">Technologie</option>
+            <option value="Prawo">Prawo</option>
+            <option value="Adopcje">Adopcje</option>
+            <option value="Pozostałe">Pozostałe</option>
+          </select>
+        </div>
+      `;
+      container.appendChild(div);
 
-    // Zamienia linki w tekście na klikalne
-    function linkify(text) {
-      const urlRegex = /https?:\/\/[^\s]+/g;
-      return text.replace(urlRegex, match => `<a href="${match}" target="_blank" rel="noopener noreferrer">${match}</a>`);
-    }
+      const select = div.querySelector(`#select-${index}`);
+      select.addEventListener("change", () => {
+        const category = select.value;
+        if (!category) return;
 
-    // Wyciąga pierwszy link z tekstu, jeśli jest, albo null
-    function extractFirstLink(text) {
-      const urlRegex = /https?:\/\/[^\s]+/g;
-      const matches = text.match(urlRegex);
-      return matches ? matches[0] : null;
-    }
-
-    // Wysłanie danych do webhooka n8n
-    function sendCategoryUpdate(link, category) {
-      if (!link) {
-        console.warn('Brak linku do artykułu, nie wysyłam kategorii.');
-        return;
-      }
-      fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          link,
-          category
+        fetch(webhookURL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            link: article.link,
+            category: category
+          })
         })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Błąd sieci podczas wysyłania kategorii');
-        return res.json();
-      })
-      .then(data => {
-        console.log('Kategoria zapisana:', data);
-      })
-      .catch(err => {
-        console.error('Błąd podczas wysyłania kategorii:', err);
+        .then(res => {
+          if (!res.ok) throw new Error("Błąd webhooka");
+          alert("Ocena wysłana!");
+        })
+        .catch(err => {
+          alert("Błąd przy wysyłaniu: " + err.message);
+        });
       });
-    }
-
-    function fetchPosts() {
-      container.innerHTML = "Ładowanie...";
-
-      fetch(`${SUPABASE_URL}/rest/v1/posts?select=title,content&order=title.desc&limit=100`, {
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      })
-      .then(res => res.ok ? res.json() : Promise.reject(`Błąd sieci: ${res.status}`))
-      .then(posts => {
-        const selectedDate = datePicker.value;
-        if (!selectedDate) {
-          container.innerHTML = '<p>Wybierz datę, aby zobaczyć artykuły.</p>';
-          return;
-        }
-
-        const filteredPosts = posts.filter(post => {
-          if (!post.title) return false;
-          const postDateISO = parseTitleDateToISO(post.title);
-          return postDateISO === selectedDate;
-        });
-
-        if (filteredPosts.length === 0) {
-          container.innerHTML = `<p>Brak artykułów na dzień ${selectedDate}.</p>`;
-          return;
-        }
-
-        container.innerHTML = '';
-        filteredPosts.forEach(post => {
-          const link = extractFirstLink(post.content) || '#'; // fallback na # jeśli brak linku
-          container.innerHTML += `
-            <article>
-              <div class="content-wrapper">
-                <h2>${post.title}</h2>
-                <p>${linkify(post.content)}</p>
-              </div>
-              <div>
-                <select class="category-select" data-link="${link}">
-                  <option value="">Wybierz kategorię</option>
-                  <option value="Rynki">Rynki</option>
-                  <option value="Technologie">Technologie</option>
-                  <option value="Prawo">Prawo</option>
-                  <option value="Adopcje">Adopcje</option>
-                  <option value="Pozostałe">Pozostałe</option>
-                </select>
-              </div>
-            </article>
-          `;
-        });
-
-        // Dodaj listener do wszystkich selectów
-        document.querySelectorAll('.category-select').forEach(select => {
-          select.addEventListener('change', e => {
-            const cat = e.target.value;
-            const link = e.target.getAttribute('data-link');
-            if (cat) {
-              sendCategoryUpdate(link, cat);
-            }
-          });
-        });
-      })
-      .catch(err => {
-        console.error(err);
-        container.innerHTML = `<p>Błąd podczas ładowania postów: ${err}</p>`;
-      });
-    }
-
-    function shiftDate(days) {
-      const current = new Date(datePicker.value);
-      current.setDate(current.getDate() + days);
-      const iso = current.toISOString().split('T')[0];
-      datePicker.value = iso;
-      fetchPosts();
-    }
-
-    prevDayBtn.addEventListener('click', () => shiftDate(-1));
-    nextDayBtn.addEventListener('click', () => shiftDate(1));
-    datePicker.addEventListener('change', fetchPosts);
-
-    const today = new Date().toISOString().slice(0, 10);
-    datePicker.value = today;
-    fetchPosts();
+    });
   </script>
 </body>
 </html>
