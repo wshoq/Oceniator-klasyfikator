@@ -6,15 +6,15 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 750px;
+      max-width: 700px;
       margin: auto;
       padding: 2rem;
-      background: #f8f8f8;
+      background: #f7f7f7;
     }
     article {
       background: white;
       padding: 1rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
@@ -29,7 +29,7 @@
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
     .date-controls button {
       font-size: 1.5rem;
@@ -64,16 +64,6 @@
     }
     .big-button:hover {
       background-color: #b02a37;
-    }
-    form {
-      margin-top: 0.75rem;
-      background: #f0f0f0;
-      padding: 0.75rem;
-      border-radius: 6px;
-    }
-    form select, form button {
-      margin-left: 0.5rem;
-      padding: 0.25rem;
     }
   </style>
 </head>
@@ -141,67 +131,45 @@
 
         container.innerHTML = '';
         filteredPosts.forEach(post => {
-          const article = document.createElement('article');
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(post.content, 'text/html');
-          const children = Array.from(doc.body.children);
+          const contentHTML = post.content;
 
-          const titleEl = document.createElement('h2');
-          titleEl.textContent = post.title;
-          article.appendChild(titleEl);
+          const sections = contentHTML.split(/<p>####\s(.+?)<\/p>/g); // dzieli na sekcje
 
-          let currentHeader = null;
-          let currentContent = [];
+          let finalHTML = `<article><h2>${post.title}</h2>`;
 
-          const flushSection = () => {
-            if (!currentHeader) return;
-            const section = document.createElement('div');
+          for (let i = 1; i < sections.length; i += 2) {
+            const header = sections[i];
+            const body = sections[i + 1];
 
-            const header = document.createElement('p');
-            header.innerHTML = currentHeader.innerHTML;
-            section.appendChild(header);
+            // Szukamy linka w body
+            const linkMatch = body.match(/<a href="(.*?)"/);
+            const link = linkMatch ? linkMatch[1] : "";
 
-            currentContent.forEach(el => section.appendChild(el.cloneNode(true)));
-
-            // Link z ostatniego <p> z linkiem, jeśli istnieje
-            const lastLink = section.querySelector('a')?.href || '';
-
-            const form = document.createElement('form');
-            form.method = "POST";
-            form.action = "https://vps15151.awhost.cloud/webhook-test/oceniator";
-            form.innerHTML = `
-              <label>Oceń ten fragment:
-                <select name="Kategoria">
-                  <option value="Rynki">Rynki</option>
-                  <option value="Prawo">Prawo</option>
-                  <option value="Technologie">Technologie</option>
-                  <option value="Adopcje">Adopcje</option>
-                  <option value="Pozostałe">Pozostałe</option>
-                </select>
-                <input type="hidden" name="nagłówek" value="${currentHeader.textContent.trim()}">
-                <input type="hidden" name="link" value="${lastLink}">
-                <button type="submit">Wyślij</button>
-              </label>
+            finalHTML += `
+              <div class="fragment">
+                <h3>${header}</h3>
+                <div>${body}</div>
+                <form method="POST" action="https://vps15151.awhost.cloud/webhook-test/oceniator" target="_blank">
+                  <label>Zaklasyfikuj temat:
+                    <select name="kategoria" required>
+                      <option value="Rynki">Rynki</option>
+                      <option value="Technologie">Technologie</option>
+                      <option value="Prawo">Prawo</option>
+                      <option value="Adopcje">Adopcje</option>
+                      <option value="Pozostałe">Pozostałe</option>
+                    </select>
+                  </label>
+                  <input type="hidden" name="nagłówek" value="${header}">
+                  <input type="hidden" name="link" value="${link}">
+                  <button type="submit">Wyślij</button>
+                </form>
+                <hr />
+              </div>
             `;
+          }
 
-            section.appendChild(form);
-            article.appendChild(section);
-          };
-
-          children.forEach(el => {
-            if (el.tagName === 'P' && el.textContent.startsWith('####')) {
-              flushSection();
-              currentHeader = el;
-              currentContent = [];
-            } else if (currentHeader) {
-              currentContent.push(el);
-            } else {
-              article.appendChild(el.cloneNode(true));
-            }
-          });
-
-          flushSection();
-          container.appendChild(article);
+          finalHTML += `</article>`;
+          container.innerHTML += finalHTML;
         });
       })
       .catch(err => {
