@@ -65,6 +65,11 @@
     .big-button:hover {
       background-color: #b02a37;
     }
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+      color: green;
+    }
   </style>
 </head>
 <body>
@@ -132,8 +137,7 @@
         container.innerHTML = '';
         filteredPosts.forEach(post => {
           const contentHTML = post.content;
-
-          const sections = contentHTML.split(/<p>####\s(.+?)<\/p>/g); // dzieli na sekcje
+          const sections = contentHTML.split(/<p>####\s(.+?)<\/p>/g);
 
           let finalHTML = `<article><h2>${post.title}</h2>`;
 
@@ -141,30 +145,30 @@
             const header = sections[i];
             const body = sections[i + 1];
 
-            // Wyciągamy link w formacie: (https://cointelegraph.com/...) lub (https://coindesk.com/...)
             const linkMatch = body.match(/\(https:\/\/(cointelegraph|coindesk)\.com[^\)]*\)/);
             const link = linkMatch ? linkMatch[0].slice(1, -1) : "";
+
+            const formId = `form-${i}`;
 
             finalHTML += `
               <div class="fragment">
                 <h3>${header}</h3>
                 <div>${body}</div>
-                <form method="POST" action="https://vps15151.awhost.cloud/webhook-test/oceniator" target="_blank">
+                <div id="${formId}">
                   <label>Zaklasyfikuj temat:
-                    <select name="kategoria" required>
+                    <select required name="kategoria">
+                      <option value="">--Wybierz--</option>
                       <option value="Rynki">Rynki</option>
                       <option value="Technologie">Technologie</option>
                       <option value="Prawo">Prawo</option>
                       <option value="Adopcje">Adopcje</option>
                       <option value="Pozostałe">Pozostałe</option>
                     </select>
+                    <button onclick="submitOcena(this, '${header.replace(/'/g, "\\'")}', '${link}', '${formId}')">Wyślij</button>
                   </label>
-                  <input type="hidden" name="nagłówek" value="${header}">
-                  <input type="hidden" name="link" value="${link}">
-                  <button type="submit">Wyślij</button>
-                </form>
-                <hr />
+                </div>
               </div>
+              <hr />
             `;
           }
 
@@ -175,6 +179,38 @@
       .catch(err => {
         console.error(err);
         container.innerHTML = `<p>Błąd podczas ładowania postów: ${err}</p>`;
+      });
+    }
+
+    function submitOcena(button, header, link, containerId) {
+      const select = button.previousElementSibling;
+      const category = select.value;
+
+      if (!category) {
+        alert("Wybierz kategorię.");
+        return;
+      }
+
+      fetch('https://vps15151.awhost.cloud/webhook-test/oceniator', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+          nagłówek: header,
+          kategoria: category,
+          link: link
+        })
+      })
+      .then(res => {
+        if (res.ok) {
+          const div = document.getElementById(containerId);
+          div.innerHTML = `<span class="status">✅ Ocenione!</span>`;
+        } else {
+          alert('Coś poszło nie tak 😓');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Błąd połączenia z webhookiem.');
       });
     }
 
